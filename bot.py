@@ -10,7 +10,6 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
 HF_TOKEN = os.getenv("HF_TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
 
 if OPENAI_API_KEY:
     openai_client = OpenAI(api_key=OPENAI_API_KEY)
@@ -34,7 +33,6 @@ def perplexity_query(prompt):
 
 async def get_ai_response(prompt):
 
-    # OpenAI
     if OPENAI_API_KEY:
         try:
             start = time.time()
@@ -46,7 +44,6 @@ async def get_ai_response(prompt):
         except Exception as e:
             print("OpenAI error:", e)
 
-    # Perplexity
     if PERPLEXITY_API_KEY:
         try:
             start = time.time()
@@ -55,7 +52,6 @@ async def get_ai_response(prompt):
         except Exception as e:
             print("Perplexity error:", e)
 
-    # HuggingFace
     if HF_TOKEN:
         try:
             start = time.time()
@@ -73,24 +69,17 @@ async def get_ai_response(prompt):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🌙 Project Tsukuyomi Activated.")
 
-async def health(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if ADMIN_ID and update.effective_user.id != ADMIN_ID:
-        return
-    status = ""
-    status += f"OpenAI: {'✅' if OPENAI_API_KEY else '❌'}\n"
-    status += f"Perplexity: {'✅' if PERPLEXITY_API_KEY else '❌'}\n"
-    status += f"HuggingFace: {'✅' if HF_TOKEN else '❌'}\n"
-    await update.message.reply_text("🔍 API Health\n\n" + status)
-
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("⏳ Thinking...")
     reply = await get_ai_response(update.message.text)
     await update.message.reply_text(reply)
 
-app = ApplicationBuilder().token(BOT_TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("health", health))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+def main():
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    print("Bot is running...")
+    app.run_polling()
 
-print("Project Tsukuyomi Running...")
-app.run_polling()
+if __name__ == "__main__":
+    main()
